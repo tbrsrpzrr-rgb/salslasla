@@ -1,0 +1,201 @@
+-- CONFIG
+local KeyListURL = "https://raw.githubusercontent.com/Saschaski11/rbxscrits/refs/heads/main/key.txt"
+local MainScriptURL = "https://raw.githubusercontent.com/ToshyWare/StyxzHub/main/Styxz.lua"
+local GetKeyURL = "https://link-hub.net/1401246/CYmPm5aaLjIq"
+
+-- COLOR PALETTE
+local Colors = {
+    Background = Color3.fromRGB(35,35,40),
+    Frame = Color3.fromRGB(40,40,45),
+    Secondary = Color3.fromRGB(65,65,75),
+    AccentPrimary = Color3.fromRGB(0,170,160),
+    AccentSecondary = Color3.fromRGB(255,165,50),
+    ButtonClose = Color3.fromRGB(220,50,50),
+    Input = Color3.fromRGB(50,50,60),
+    Text = Color3.fromRGB(240,240,240),
+    StatusDefault = Color3.fromRGB(200,200,200),
+    StatusSuccess = Color3.fromRGB(0,255,0),
+    StatusError = Color3.fromRGB(255,0,0)
+}
+
+-- MAIN
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "PremiumKeyGui"
+screenGui.Parent = playerGui
+
+-- Background
+local blur = Instance.new("Frame")
+blur.Size = UDim2.new(1,0,1,0)
+blur.BackgroundColor3 = Colors.Background
+blur.BackgroundTransparency = 0.6
+blur.BorderSizePixel = 0
+blur.Parent = screenGui
+
+-- Main Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0,440,0,370)
+frame.Position = UDim2.new(0.5,0,0.5,0)
+frame.AnchorPoint = Vector2.new(0.5,0.5)
+frame.BackgroundColor3 = Colors.Frame
+frame.BorderSizePixel = 0
+frame.Parent = blur
+
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0,20)
+frameCorner.Parent = frame
+
+local frameStroke = Instance.new("UIStroke")
+frameStroke.Color = Color3.fromRGB(20,20,20)
+frameStroke.Thickness = 2
+frameStroke.Transparency = 0.4
+frameStroke.Parent = frame
+
+-- Layout
+local layout = Instance.new("UIListLayout")
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Padding = UDim.new(0,15)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.Parent = frame
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(0.9,0,0,50)
+title.BackgroundTransparency = 1
+title.Text = "🔑 Enter Your penis"
+title.TextColor3 = Colors.Text
+title.Font = Enum.Font.GothamBlack
+title.TextScaled = true
+title.LayoutOrder = 0
+title.Parent = frame
+
+-- Input Box
+local input = Instance.new("TextBox")
+input.Size = UDim2.new(0.85,0,0,45)
+input.BackgroundColor3 = Colors.Input
+input.TextColor3 = Colors.Text
+input.PlaceholderText = " cu..."
+input.Text = ""
+input.TextScaled = true
+input.ClearTextOnFocus = false
+input.LayoutOrder = 1
+input.Parent = frame
+
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0,12)
+inputCorner.Parent = input
+
+-- Status Label
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(0.85,0,0,30)
+status.BackgroundTransparency = 1
+status.Text = "Status: Waiting..."
+status.TextColor3 = Colors.StatusDefault
+status.TextScaled = true
+status.LayoutOrder = 2
+status.Parent = frame
+
+-- Button Factory
+local function createButton(text,color,order)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.85,0,0,45)
+    btn.BackgroundColor3 = color
+    btn.Text = text
+    btn.TextColor3 = Colors.Text
+    btn.TextScaled = true
+    btn.BorderSizePixel = 0
+    btn.LayoutOrder = order
+    btn.Parent = frame
+
+    -- Rounded Corners
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0,12)
+    corner.Parent = btn
+
+    -- Gradient Accent
+    local grad = Instance.new("UIGradient")
+    grad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0,color:Lerp(Color3.fromRGB(255,255,255),0.1)),
+        ColorSequenceKeypoint.new(1,color)
+    })
+    grad.Rotation = 45
+    grad.Parent = btn
+
+    -- Hover Animation
+    btn.MouseEnter:Connect(function()
+        btn:TweenSizeAndPosition(UDim2.new(0.86,0,0,47),btn.Position,"Out","Quad",0.15,true)
+    end)
+    btn.MouseLeave:Connect(function()
+        btn:TweenSizeAndPosition(UDim2.new(0.85,0,0,45),btn.Position,"Out","Quad",0.15,true)
+    end)
+
+    return btn
+end
+
+-- Buttons
+local checkBtn = createButton("Check Key", Colors.AccentPrimary,3)
+local getKeyBtn = createButton("Get Key", Colors.AccentSecondary,4)
+local closeBtn = createButton("Close", Colors.ButtonClose,5)
+
+-- Key Logic
+local _keyCache = nil
+local HttpGet = game.HttpGet or function(self,url)
+    return game:GetService("HttpService"):GetAsync(url)
+end
+
+local function loadKeys()
+    local ok,res = pcall(function()
+        return HttpGet(game, KeyListURL)
+    end)
+    if not ok or type(res) ~= "string" then return false, "Failed to fetch keys" end
+    local t = {}
+    for line in res:gmatch("[^\r\n]+") do
+        t[line:gsub("^%s*(.-)%s*$","%1")] = true
+    end
+    _keyCache = t
+    return true
+end
+
+local function checkKeyExact(key)
+    if not _keyCache then
+        local ok,err = loadKeys()
+        if not ok then return false, err end
+    end
+    key = tostring(key or ""):gsub("^%s*(.-)%s*$","%1")
+    if key == "" then return false,"Empty" end
+    if _keyCache[key] then return true end
+    return false,"Invalid"
+end
+
+-- Button Actions
+checkBtn.MouseButton1Click:Connect(function()
+    status.Text = "Checking..."
+    local ok,msg = checkKeyExact(input.Text)
+    if ok then
+        status.Text = "Access Granted ✅"
+        status.TextColor3 = Colors.StatusSuccess
+        wait(0.3)
+        screenGui:Destroy()
+        loadstring(game:HttpGet(MainScriptURL))()
+    else
+        status.Text = msg
+        status.TextColor3 = Colors.StatusError
+    end
+end)
+
+getKeyBtn.MouseButton1Click:Connect(function()
+    if setclipboard then
+        setclipboard(GetKeyURL)
+        status.Text = "Link copied to clipboard 📋"
+        status.TextColor3 = Colors.AccentSecondary
+    else
+        status.Text = "Clipboard not supported"
+        status.TextColor3 = Colors.AccentSecondary
+    end
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
